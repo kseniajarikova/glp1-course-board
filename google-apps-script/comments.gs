@@ -1,4 +1,4 @@
-const SHEET_NAME = 'Лист1';
+const SHEET_NAME = 'Sheet1';
 
 function getSheet_() {
   return SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME)
