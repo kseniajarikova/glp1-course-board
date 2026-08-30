@@ -1,6 +1,8 @@
 # Подключение общего хранения комментариев
 
-1. Открой таблицу «GLP-1 — комментарии рабочей доски».
+Таблица: https://docs.google.com/spreadsheets/d/1Fq_abNbOHV_k80HHv36fo_V53axTJkUJOXH8z8PymSo/edit
+
+1. Открой таблицу.
 2. Открой **Расширения → Apps Script**.
 3. Удали код в редакторе и вставь содержимое файла `google-apps-script/comments.gs`.
 4. Нажми **Сохранить**.
