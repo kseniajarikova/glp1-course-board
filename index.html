@@ -10,6 +10,7 @@
   </style>
   <style>
     .workspace-note{margin:14px 0 0;padding:10px 12px;border:1px solid #cbded4;border-radius:10px;background:rgba(255,255,255,.62);font-size:13px;color:#50635a}
+    .github-sync{margin:12px 0 0;border:1px solid #cfc8df;border-radius:12px;background:rgba(255,255,255,.72)}.github-sync summary{padding:11px 13px;cursor:pointer;color:#59447d;font-weight:800}.github-sync-body{padding:0 13px 13px}.token-label{display:block;margin:10px 0 5px;font-size:12px;font-weight:800;color:#59447d}.github-token{width:100%;padding:9px 10px;border:1px solid #cfc8df;border-radius:8px;font:13px/1.3 inherit}.sync-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:9px}.sync-actions .utility-button{background:var(--violet)}.sync-actions .utility-button:first-child{background:var(--green)}
     .decision{border-left:4px solid var(--violet);background:#fcfbff}.expert{border-left:4px solid var(--yellow);background:#fffdf8}
     .comment-box{margin-top:14px;padding-top:13px;border-top:1px dashed #cfc8df}.comment-box label{display:block;margin-bottom:6px;font-size:13px;font-weight:800;color:#59447d}.comment-box textarea{display:block;width:100%;min-height:82px;padding:10px 11px;resize:vertical;border:1px solid #cfc8df;border-radius:9px;background:#fff;color:var(--ink);font:14px/1.45 inherit}.comment-actions{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:8px}.comment-actions button,.utility-button{border:0;border-radius:8px;background:var(--violet);color:#fff;padding:8px 11px;font-weight:750;cursor:pointer}.comment-actions button:hover,.utility-button:hover{filter:brightness(.94)}.save-state{font-size:12px;color:var(--muted)}.save-state.saved{color:var(--green);font-weight:700}.decision-owner{display:inline-block;margin-bottom:5px;color:var(--violet);font-size:12px;font-weight:800}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:12px 0}.metric{padding:12px;border:1px solid var(--line);border-radius:11px;background:#f8fbf9}.metric b{display:block;font-size:22px;line-height:1.1}.metric span{font-size:12px;color:var(--muted)}.data-table{width:100%;border-collapse:collapse;margin-top:10px}.data-table th,.data-table td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top;text-align:left}.data-table th{font-size:12px;color:var(--muted)}.data-table td:first-child{font-weight:750}.utility-row{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;margin:16px 0}.utility-button{background:var(--green)}details.more{margin-top:10px;border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:#fff}details.more summary{cursor:pointer;font-weight:800}
     @media(max-width:620px){.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.data-table,.data-table tbody,.data-table tr,.data-table td{display:block}.data-table thead{display:none}.data-table tr{padding:9px 0;border-bottom:1px solid var(--line)}.data-table td{padding:3px 0;border:0}.data-table td:before{content:attr(data-label);display:block;color:var(--muted);font-size:11px;font-weight:700}.comment-box textarea{min-height:96px}}
@@ -30,7 +31,13 @@
       <a href="https://olymarkes.github.io/sekta-glp1-course/course-preview.html#program" target="_blank" rel="noopener">Рабочий прототип курса</a>
       <a href="https://docs.google.com/document/d/1v7RZw-ktDU0V2cCbrKf_5Z2Ee6fDeWq3dnFP4Zx23Vg/edit" target="_blank" rel="noopener">Расшифровки подкастов и готовые статьи</a>
     </div></details>
-    <div class="workspace-note"><b>Рабочий режим:</b> у каждого блока, где требуется решение, есть поле владельца задачи. Нажмите «Сохранить комментарий» — текст останется в этой карточке после обновления страницы на текущем устройстве.</div>
+    <div class="workspace-note"><b>Рабочий режим:</b> у каждого блока, где требуется решение, есть поле владельца задачи. Комментарий сохраняется на этом устройстве сразу. Для общей версии на GitHub откройте синхронизацию ниже.</div>
+    <details class="github-sync"><summary>Синхронизация комментариев с GitHub</summary><div class="github-sync-body">
+      <p class="meta">Комментарии загружаются из общего файла доски. Чтобы записать изменения обратно в репозиторий, нужен GitHub Personal Access Token с правом <b>Contents: Read and write</b> для этого репозитория. Токен используется только в текущей вкладке.</p>
+      <label class="token-label" for="github-token">GitHub-токен</label>
+      <input id="github-token" class="github-token" type="password" autocomplete="off" placeholder="ghp_… или github_pat_…">
+      <div class="sync-actions"><button id="load-github-comments" class="utility-button" type="button">Загрузить с GitHub</button><button id="sync-github-comments" class="utility-button" type="button">Сохранить на GitHub</button><span id="github-sync-state" class="save-state">Комментарии пока не синхронизированы</span></div>
+    </div></details>
   </section>
 
   <nav class="tabs" aria-label="Ответственные">
@@ -165,25 +172,38 @@
   const initial=location.hash.slice(1);if(panels.some(p=>p.id===initial))openTab(initial);
 
   const commentPrefix='glp1-course-board-comment-v2:';
+  const githubApi='https://api.github.com/repos/kseniajarikova/glp1-course-board/contents/comments.json';
+  const githubRaw='https://raw.githubusercontent.com/kseniajarikova/glp1-course-board/main/comments.json';
   const formatSavedTime=value=>new Intl.DateTimeFormat('ru-RU',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}).format(new Date(value));
+  const readLocalComments=()=>{const result={};document.querySelectorAll('.decision').forEach((block,index)=>{const key=block.dataset.commentKey||('decision-'+index);try{const value=JSON.parse(localStorage.getItem(commentPrefix+key)||'null');if(value?.text||value?.updatedAt)result[key]=value}catch(e){}});return result};
+  const mergeComments=comments=>{Object.entries(comments||{}).forEach(([key,incoming])=>{if(!incoming)return;let local=null;try{local=JSON.parse(localStorage.getItem(commentPrefix+key)||'null')}catch(e){};if(!local||new Date(incoming.updatedAt||0)>=new Date(local.updatedAt||0))localStorage.setItem(commentPrefix+key,JSON.stringify(incoming))})};
+  const renderStoredComment=(block,key,state,textarea)=>{let stored=null;try{stored=JSON.parse(localStorage.getItem(commentPrefix+key)||'null')}catch(e){};if(stored?.text){textarea.value=stored.text;state.className='save-state saved';state.textContent='Сохранено '+formatSavedTime(stored.updatedAt)}else if(stored?.updatedAt){state.className='save-state saved';state.textContent='Комментарий очищен'}};
   document.querySelectorAll('.decision').forEach((block,index)=>{
     const key=block.dataset.commentKey||('decision-'+index);
     const owner=block.dataset.owner||'владелец задачи';
-    if(!block.querySelector('.decision-owner')){
-      const ownerLine=document.createElement('span');ownerLine.className='decision-owner';ownerLine.textContent='Владелец: '+owner;block.prepend(ownerLine);
-    }
+    if(!block.querySelector('.decision-owner')){const ownerLine=document.createElement('span');ownerLine.className='decision-owner';ownerLine.textContent='Владелец: '+owner;block.prepend(ownerLine)}
     const box=document.createElement('div');box.className='comment-box';
     const label=document.createElement('label');label.textContent='Комментарий владельца задачи';
     const textarea=document.createElement('textarea');textarea.placeholder='Зафиксируйте решение, статус, вопрос или следующий шаг…';textarea.setAttribute('aria-label','Комментарий владельца: '+owner);
     const actions=document.createElement('div');actions.className='comment-actions';
     const save=document.createElement('button');save.type='button';save.textContent='Сохранить комментарий';
     const state=document.createElement('span');state.className='save-state';state.textContent='Комментарий пока не сохранён';
-    let stored=null;try{stored=JSON.parse(localStorage.getItem(commentPrefix+key)||'null')}catch(e){}
-    if(stored?.text){textarea.value=stored.text;state.className='save-state saved';state.textContent='Сохранено '+formatSavedTime(stored.updatedAt)}
+    renderStoredComment(block,key,state,textarea);
     textarea.addEventListener('input',()=>{state.className='save-state';state.textContent='Есть несохранённые изменения'});
     save.addEventListener('click',()=>{const record={text:textarea.value.trim(),updatedAt:new Date().toISOString(),owner};localStorage.setItem(commentPrefix+key,JSON.stringify(record));state.className='save-state saved';state.textContent=record.text?'Сохранено '+formatSavedTime(record.updatedAt):'Комментарий очищен'});
     actions.append(save,state);box.append(label,textarea,actions);block.append(box);
   });
+  const syncState=document.getElementById('github-sync-state'),tokenInput=document.getElementById('github-token');
+  const setSyncState=(text,saved=false)=>{syncState.textContent=text;syncState.className='save-state'+(saved?' saved':'')};
+  async function loadFromGitHub(){
+    setSyncState('Загружаю…');
+    try{const response=await fetch(githubRaw+'?t='+Date.now());if(!response.ok)throw new Error('HTTP '+response.status);const data=await response.json();mergeComments(data.comments||{});document.querySelectorAll('.decision').forEach(block=>{const key=block.dataset.commentKey;if(!key)return;const textarea=block.querySelector('textarea'),state=block.querySelector('.save-state');if(textarea&&state)renderStoredComment(block,key,state,textarea)});setSyncState('Загружено с GitHub ✓',true)}catch(error){setSyncState('Не удалось загрузить: '+error.message)}}
+  async function saveToGitHub(){
+    const token=tokenInput.value.trim();if(!token){setSyncState('Вставьте GitHub-токен для записи');tokenInput.focus();return}
+    setSyncState('Сохраняю…');
+    try{const get=await fetch(githubApi,{headers:{Authorization:'Bearer '+token,Accept:'application/vnd.github+json'}});if(!get.ok)throw new Error('не удалось прочитать comments.json (HTTP '+get.status+')');const file=await get.json();const payload={comments:readLocalComments(),updatedAt:new Date().toISOString()};const put=await fetch(githubApi,{method:'PUT',headers:{Authorization:'Bearer '+token,Accept:'application/vnd.github+json','Content-Type':'application/json'},body:JSON.stringify({message:'Синхронизировать комментарии доски',content:btoa(unescape(encodeURIComponent(JSON.stringify(payload,null,2)+'\n'))),sha:file.sha})});if(!put.ok)throw new Error('не удалось записать файл (HTTP '+put.status+')');setSyncState('Сохранено на GitHub ✓',true)}catch(error){setSyncState('Ошибка синхронизации: '+error.message)}}
+  document.getElementById('load-github-comments')?.addEventListener('click',loadFromGitHub);
+  document.getElementById('sync-github-comments')?.addEventListener('click',saveToGitHub);
 
   panels.forEach(panel=>{
     const decisions=[...panel.querySelectorAll('.decision')];if(!decisions.length)return;
