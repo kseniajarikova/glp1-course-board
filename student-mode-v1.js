@@ -9,6 +9,22 @@
   const normalize = value => String(value || "").toLocaleLowerCase("ru-RU").replace(/ё/g,"е").trim();
   let dirty = false;
   let selectedIngredients = [];
+  const proteinFilters = [
+    {label:"Яйца", aliases:["яйц"]},
+    {label:"Курица", aliases:["курин"]},
+    {label:"Индейка", aliases:["инд"]},
+    {label:"Рыба", aliases:["рыб","трес","лос","хек"]},
+    {label:"Творог", aliases:["творог"]},
+    {label:"Йогурт", aliases:["йогурт"]},
+    {label:"Скир", aliases:["скир"]},
+    {label:"Рикотта", aliases:["рикот"]},
+    {label:"Тофу", aliases:["тофу"]},
+    {label:"Бобовые", aliases:["чечев","фасол","горох"]},
+    {label:"Творожный сыр", aliases:["творожн сыр"]},
+    {label:"Сыр", aliases:["сыр"]},
+    {label:"Кефир", aliases:["кефир"]},
+    {label:"Ряженка", aliases:["ряжен"]}
+  ];
 
   const style = document.createElement("style");
   style.textContent = [
@@ -233,7 +249,11 @@
   function recipeMatches(x){
     if(!selectedIngredients.length) return true;
     const hay = (x.ingredients || []).map(i => normalize(i[0])).join(" ");
-    return selectedIngredients.every(needle => hay.includes(normalize(needle)));
+    return selectedIngredients.every(label => {
+      const filter = proteinFilters.find(item => item.label === label);
+      const aliases = filter ? filter.aliases : [label];
+      return aliases.some(alias => hay.includes(normalize(alias)));
+    });
   }
   function calculatorRecipeCard(item){
     const x=item.x, type=item.type, week=item.week, portion=desired(type,week);
@@ -241,10 +261,12 @@
   }
   function renderIngredientPicker(){
     const all = entries();
-    const preferred = ["Яйца","Йогурт греческий","Творог","Куриное филе","Индейка","Рыба","Овсянка","Рис","Картофель","Овощи"];
-    const available = preferred.filter(name => all.some(item => (item.x.ingredients || []).some(i => normalize(i[0]).includes(normalize(name)) || normalize(name).includes(normalize(i[0])))));
-    $("#ingredientPicker").innerHTML = available.map(name => '<button type="button" class="ingredient-chip '+(selectedIngredients.includes(name)?"active":"")+'" data-ingredient="'+escText(name)+'">'+escText(name)+'</button>').join("");
-    $$(".ingredient-chip", $("#ingredientPicker")).forEach(btn => btn.onclick = () => {
+    const available = proteinFilters.filter(filter => all.some(item => (item.x.ingredients || []).some(i => filter.aliases.some(alias => normalize(i[0]).includes(normalize(alias))))));
+    const unavailable = proteinFilters.filter(filter => !available.includes(filter));
+    const activeMarkup = available.map(filter => '<button type="button" class="ingredient-chip '+(selectedIngredients.includes(filter.label)?"active":"")+'" data-ingredient="'+escText(filter.label)+'">'+escText(filter.label)+'</button>').join("");
+    const unavailableMarkup = unavailable.map(filter => '<span class="ingredient-chip is-unavailable" title="В текущей базе пока нет рецептов с этим продуктом">'+escText(filter.label)+'</span>').join("");
+    $("#ingredientPicker").innerHTML = activeMarkup + unavailableMarkup;
+    $$(".ingredient-chip:not(.is-unavailable)", $("#ingredientPicker")).forEach(btn => btn.onclick = () => {
       const name=btn.dataset.ingredient;
       selectedIngredients = selectedIngredients.includes(name) ? selectedIngredients.filter(x=>x!==name) : selectedIngredients.concat(name);
       renderIngredientPicker();
