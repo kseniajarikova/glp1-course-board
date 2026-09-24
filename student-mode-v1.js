@@ -26,6 +26,7 @@
     {label:"Ряженка", aliases:["ряжен"]}
   ];
 
+  if(typeof RECIPE_IMAGES === "object"){ RECIPE_IMAGES["w3b8"] = RECIPE_IMAGES["b2"]; RECIPE_IMAGES["w4s8"] = RECIPE_IMAGES["w3s1"] || RECIPE_IMAGES["b2"]; }
   const style = document.createElement("style");
   style.textContent = [
     ".brand-lockup{display:inline-flex;align-items:center;gap:12px;color:var(--ink);font-weight:800;letter-spacing:-.04em}",
