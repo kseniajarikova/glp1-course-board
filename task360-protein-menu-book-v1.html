@@ -515,7 +515,7 @@ makeAll();renderProteinSummary();renderMenu();renderLibrary();
     const x=recipeFor(id);
     if(!x) return;
     const p=desired(type,week), scale=p/x.p;
-    const ingredients=(x.ingredients||[]).map(item => "<li>"+escText(canonicalIngredientName(item[0]))+" — "+escText(rounded(item,scale))+"</li>").join("");
+    const ingredients=(x.ingredients||[]).map(item => "<li>"+escText(item[0])+" — "+escText(rounded(item,scale))+"</li>").join("");
     const steps=String(x.steps||"Собрать блюдо по рецепту.").split(/(?<=[.!?])\s+/).filter(Boolean).map(step => "<li>"+escText(cap(step))+"</li>").join("");
     $("#recipeModalKicker").textContent=roles[type]+(week>=3?" · неделя "+week:" · базовая библиотека");
     $("#recipeModalTitle").textContent=x.name;
